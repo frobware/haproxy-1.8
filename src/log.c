@@ -396,7 +396,7 @@ int parse_logformat_var(char *arg, int arg_len, char *var, int var_len, struct p
 				return 1;
 			} else {
 				memprintf(err, "format variable '%s' is reserved for HTTP mode",
-				          logformat_keywords[j].name);
+					  logformat_keywords[j].name);
 				return 0;
 			}
 		}
@@ -496,7 +496,7 @@ int add_sample_to_logformat_list(char *text, char *arg, int arg_len, struct prox
 		free(node);
 		node = NULL;
 		memprintf(err, "sample fetch <%s> may not be reliably used here because it needs '%s' which is not available here",
-		          text, sample_src_names(expr->fetch->use));
+			  text, sample_src_names(expr->fetch->use));
 		return 0;
 	}
 
@@ -587,7 +587,7 @@ int parse_logformat_string(const char *fmt, struct proxy *curproxy, struct list 
 				pformat = LF_TEXT; /* finally we include the previous char as well */
 				sp = str - 1; /* send both the '%' and the current char */
 				memprintf(err, "unexpected variable name near '%c' at position %d line : '%s'. Maybe you want to write a single '%%', use the syntax '%%%%'",
-				          *str, (int)(str - backfmt), fmt);
+					  *str, (int)(str - backfmt), fmt);
 				goto fail;
 
 			}
@@ -707,11 +707,11 @@ void ha_alert(const char *fmt, ...)
 {
 	va_list argp;
 
-	if (!(global.mode & MODE_QUIET) || (global.mode & (MODE_VERBOSE | MODE_STARTING))) {
+	/* if (!(global.mode & MODE_QUIET) || (global.mode & (MODE_VERBOSE | MODE_STARTING))) { */
 		va_start(argp, fmt);
 		print_message("ALERT", fmt, argp);
 		va_end(argp);
-	}
+	/* } */
 }
 
 
@@ -722,11 +722,11 @@ void ha_warning(const char *fmt, ...)
 {
 	va_list argp;
 
-	if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) {
+	/* if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) { */
 		va_start(argp, fmt);
 		print_message("WARNING", fmt, argp);
 		va_end(argp);
-	}
+	/* } */
 }
 
 /*
@@ -736,12 +736,12 @@ void qfprintf(FILE *out, const char *fmt, ...)
 {
 	va_list argp;
 
-	if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) {
+	/* if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) { */
 		va_start(argp, fmt);
 		vfprintf(out, fmt, argp);
 		fflush(out);
 		va_end(argp);
-	}
+	/* } */
 }
 
 /*
@@ -794,9 +794,9 @@ int get_log_facility(const char *fac)
  * <escape>.
  */
 static char *lf_encode_string(char *start, char *stop,
-                              const char escape, const fd_set *map,
-                              const char *string,
-                              struct logformat_node *node)
+			      const char escape, const fd_set *map,
+			      const char *string,
+			      struct logformat_node *node)
 {
 	if (node->options & LOG_OPT_ESC) {
 		if (start < stop) {
@@ -839,9 +839,9 @@ static char *lf_encode_string(char *start, char *stop,
  * <escape>.
  */
 static char *lf_encode_chunk(char *start, char *stop,
-                             const char escape, const fd_set *map,
-                             const struct chunk *chunk,
-                             struct logformat_node *node)
+			     const char escape, const fd_set *map,
+			     const struct chunk *chunk,
+			     struct logformat_node *node)
 {
 	char *str, *end;
 
@@ -1088,6 +1088,23 @@ void send_log(struct proxy *p, int level, const char *format, ...)
 	__send_log(p, level, logline, data_len, default_rfc5424_sd_log_format, 2);
 }
 
+static void current_time(char *s, size_t sz, const char *strftime_fmt, int *milliseconds)
+{
+	struct tm *tm_info;
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	*milliseconds = tv.tv_usec / 1000.0;
+
+	if (*milliseconds >= 1000) {
+		*milliseconds -= 1000;
+		tv.tv_sec++;
+	}
+
+	tm_info = localtime(&tv.tv_sec);
+	strftime(s, sz, strftime_fmt, tm_info);
+}
+
 /*
  * This function sends a syslog message.
  * It doesn't care about errors nor does it report them.
@@ -1097,6 +1114,8 @@ void send_log(struct proxy *p, int level, const char *format, ...)
  */
 void __send_log(struct proxy *p, int level, char *message, size_t size, char *sd, size_t sd_size)
 {
+	int xaaa_stderr_logged = 0;
+
 	static THREAD_LOCAL struct iovec iovec[NB_MSG_IOVEC_ELEMENTS] = { };
 	static THREAD_LOCAL struct msghdr msghdr = {
 		//.msg_iov = iovec,
@@ -1182,7 +1201,7 @@ void __send_log(struct proxy *p, int level, char *message, size_t size, char *sd
 				if (!once) {
 					once = 1; /* note: no need for atomic ops here */
 					ha_alert("socket for logger #%d failed: %s (errno=%d)\n",
-					         nblogger, strerror(errno), errno);
+						 nblogger, strerror(errno), errno);
 				}
 				continue;
 			}
@@ -1287,7 +1306,7 @@ void __send_log(struct proxy *p, int level, char *message, size_t size, char *sd
 		}
 
 		max = MIN(size, maxlen - sd_max - 1);
-send:
+	send:
 		iovec[0].iov_base = hdr_ptr;
 		iovec[0].iov_len  = hdr_max;
 		iovec[1].iov_base = tag->str;
@@ -1316,8 +1335,19 @@ send:
 			if (!once) {
 				once = 1; /* note: no need for atomic ops here */
 				ha_alert("sendmsg logger #%d failed: %s (errno=%d)\n",
-				         nblogger, strerror(errno), errno);
+					 nblogger, strerror(errno), errno);
 			}
+		}
+
+		/* Forcibly output message to stderr. */
+		if (!xaaa_stderr_logged) {
+			if (stderr != NULL) {
+				char time_buffer[1024];
+				int milliseconds;
+				current_time(time_buffer, sizeof(time_buffer) - 1, "%Y-%m-%d %H:%M:%S", &milliseconds);
+				fprintf(stderr, "%s.%03d [pid %d] %s", time_buffer, milliseconds, getpid(), message);
+			}
+			xaaa_stderr_logged = 1;
 		}
 	}
 }
@@ -1477,7 +1507,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 					key = sample_fetch_as_type(be, sess, s, SMP_OPT_DIR_RES|SMP_OPT_FINAL, tmp->expr, SMP_T_STR);
 				if (tmp->options & LOG_OPT_HTTP)
 					ret = lf_encode_chunk(tmplog, dst + maxsize,
-					                      '%', http_encode_map, key ? &key->data.u.str : &empty, tmp);
+							      '%', http_encode_map, key ? &key->data.u.str : &empty, tmp);
 				else
 					ret = lf_text_len(tmplog, key ? key->data.u.str.str : NULL, key ? key->data.u.str.len : 0, dst + maxsize - tmplog, tmp);
 				if (ret == 0)
@@ -1505,7 +1535,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 						ret = ltoa_o(sess->listener->luid, tmplog, dst + maxsize - tmplog);
 					} else {
 						ret = lf_port(tmplog, (struct sockaddr *)&conn->addr.from,
-						              dst + maxsize - tmplog, tmp);
+							      dst + maxsize - tmplog, tmp);
 					}
 				}
 				else
@@ -1688,7 +1718,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 				if ((dst + maxsize - tmplog) < 4)
 					goto out;
 				ret = utoa_pad((unsigned int)s->logs.accept_date.tv_usec/1000,
-				               tmplog, 4);
+					       tmplog, 4);
 				if (ret == NULL)
 					goto out;
 				tmplog = ret;
@@ -1792,7 +1822,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 
 			case LOG_FMT_TR: // %TR = HTTP request time
 				ret = ltoa_o((t_request >= 0) ? t_request - s->logs.t_idle - s->logs.t_handshake : -1,
-				             tmplog, dst + maxsize - tmplog);
+					     tmplog, dst + maxsize - tmplog);
 				if (ret == NULL)
 					goto out;
 				tmplog = ret;
@@ -1837,10 +1867,10 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 			case LOG_FMT_TD: // %Td
 				if (s->be->mode == PR_MODE_HTTP)
 					ret = ltoa_o((s->logs.t_data >= 0) ? s->logs.t_close - s->logs.t_data : -1,
-					             tmplog, dst + maxsize - tmplog);
+						     tmplog, dst + maxsize - tmplog);
 				else
 					ret = ltoa_o((s->logs.t_connect >= 0) ? s->logs.t_close - s->logs.t_connect : -1,
-					             tmplog, dst + maxsize - tmplog);
+						     tmplog, dst + maxsize - tmplog);
 				if (ret == NULL)
 					goto out;
 				tmplog = ret;
@@ -1953,8 +1983,8 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 
 			case LOG_FMT_SRVCONN:  // %sc
 				ret = ultoa_o(objt_server(s->target) ?
-				                 objt_server(s->target)->cur_sess :
-				                 0, tmplog, dst + maxsize - tmplog);
+						 objt_server(s->target)->cur_sess :
+						 0, tmplog, dst + maxsize - tmplog);
 				if (ret == NULL)
 					goto out;
 				tmplog = ret;
@@ -1965,8 +1995,8 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 				if (s->flags & SF_REDISP)
 					LOGCHAR('+');
 				ret = ltoa_o((s->si[1].conn_retries>0) ?
-				                (be->conn_retries - s->si[1].conn_retries) :
-				                be->conn_retries, tmplog, dst + maxsize - tmplog);
+						(be->conn_retries - s->si[1].conn_retries) :
+						be->conn_retries, tmplog, dst + maxsize - tmplog);
 				if (ret == NULL)
 					goto out;
 				tmplog = ret;
@@ -2000,7 +2030,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 							LOGCHAR('|');
 						if (s->req_cap[hdr] != NULL) {
 							ret = lf_encode_string(tmplog, dst + maxsize,
-							                       '#', hdr_encode_map, s->req_cap[hdr], tmp);
+									       '#', hdr_encode_map, s->req_cap[hdr], tmp);
 							if (ret == NULL || *ret != '\0')
 								goto out;
 							tmplog = ret;
@@ -2023,7 +2053,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 							LOGCHAR('"');
 						if (s->req_cap[hdr] != NULL) {
 							ret = lf_encode_string(tmplog, dst + maxsize,
-							                       '#', hdr_encode_map, s->req_cap[hdr], tmp);
+									       '#', hdr_encode_map, s->req_cap[hdr], tmp);
 							if (ret == NULL || *ret != '\0')
 								goto out;
 							tmplog = ret;
@@ -2048,7 +2078,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 							LOGCHAR('|');
 						if (s->res_cap[hdr] != NULL) {
 							ret = lf_encode_string(tmplog, dst + maxsize,
-							                       '#', hdr_encode_map, s->res_cap[hdr], tmp);
+									       '#', hdr_encode_map, s->res_cap[hdr], tmp);
 							if (ret == NULL || *ret != '\0')
 								goto out;
 							tmplog = ret;
@@ -2071,7 +2101,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 							LOGCHAR('"');
 						if (s->res_cap[hdr] != NULL) {
 							ret = lf_encode_string(tmplog, dst + maxsize,
-							                       '#', hdr_encode_map, s->res_cap[hdr], tmp);
+									       '#', hdr_encode_map, s->res_cap[hdr], tmp);
 							if (ret == NULL || *ret != '\0')
 								goto out;
 							tmplog = ret;
@@ -2090,7 +2120,7 @@ int build_logline(struct stream *s, char *dst, size_t maxsize, struct list *list
 					LOGCHAR('"');
 				uri = txn && txn->uri ? txn->uri : "<BADREQ>";
 				ret = lf_encode_string(tmplog, dst + maxsize,
-				                       '#', url_encode_map, uri, tmp);
+						       '#', url_encode_map, uri, tmp);
 				if (ret == NULL || *ret != '\0')
 					goto out;
 				tmplog = ret;
@@ -2377,7 +2407,7 @@ void strm_log(struct stream *s)
 
 	/* if we don't want to log normal traffic, return now */
 	err = (s->flags & SF_REDISP) ||
-              ((s->flags & SF_ERR_MASK) > SF_ERR_LOCAL) ||
+	      ((s->flags & SF_ERR_MASK) > SF_ERR_LOCAL) ||
 	      (((s->flags & SF_ERR_MASK) == SF_ERR_NONE) &&
 	       (s->si[1].conn_retries != s->be->conn_retries)) ||
 	      ((sess->fe->mode == PR_MODE_HTTP) && s->txn && s->txn->status >= 500);
@@ -2409,7 +2439,7 @@ void strm_log(struct stream *s)
 
 	if (!LIST_ISEMPTY(&sess->fe->logformat_sd)) {
 		sd_size = build_logline(s, logline_rfc5424, global.max_syslog_len,
-		                        &sess->fe->logformat_sd);
+					&sess->fe->logformat_sd);
 	}
 
 	size = build_logline(s, logline, global.max_syslog_len, &sess->fe->logformat);

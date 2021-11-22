@@ -65,7 +65,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(ENABLE_ASAN "Enable Address Sanitizer" ON)
 
 if(ENABLE_ASAN)
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -ggdb3")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/ebtree)
@@ -163,6 +163,8 @@ set(HAPROXY_SRCS
   src/xxhash.c
   src/ev_poll.c
   src/ev_epoll.c
+
+  src/health_check.c
   )
 
 add_executable(haproxy src/haproxy.c ${HAPROXY_SRCS} ${EBTREE_SRCS})

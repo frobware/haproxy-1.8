@@ -2178,7 +2178,9 @@ static struct task *process_chk_conn(struct task *t)
 		ret = connect_conn_chk(t);
 		cs = check->cs;
 		conn = cs_conn(cs);
-
+		if (conn != NULL) {
+			conn->xaaa_is_health_check = 1;
+		}
 		switch (ret) {
 		case SF_ERR_UP:
 			goto out_unlock;

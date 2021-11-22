@@ -3119,10 +3119,28 @@ int main(int argc, char **argv)
 		 * sockets
 		 */
 		if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) {
+			char stdout_fname[1024];
+			char stderr_fname[1024];
+			snprintf(stdout_fname, sizeof(stdout_fname) - 1,
+				 "/tmp/haproxy-%zd-stdout", (size_t)getpid());
+			snprintf(stderr_fname, sizeof(stderr_fname) - 1,
+				 "/tmp/haproxy-%zd-stderr", (size_t)getpid());
+			fprintf(stdout, "reopening stdout on %s\n", stdout_fname);
+			fprintf(stdout, "reopening stderr on %s\n", stderr_fname);
+			if ((stdout = freopen(stdout_fname, "w", stdout)) == NULL) {
+				perror("freopen stdout");
+				exit(EXIT_FAILURE);
+			}
+			if ((stderr = freopen(stderr_fname, "w", stderr)) == NULL) {
+				perror("freopen stderr");
+				exit(EXIT_FAILURE);
+			}
+#if 0
 			/* detach from the tty */
 			stdio_quiet(devnullfd);
 			global.mode &= ~MODE_VERBOSE;
 			global.mode |= MODE_QUIET; /* ensure that we won't say anything from now */
+#endif
 		}
 		pid = getpid(); /* update child's pid */
 		setsid();
