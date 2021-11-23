@@ -275,18 +275,18 @@ static void set_server_check_status(struct check *check, short status, const cha
 	if (s->proxy->options2 & PR_O2_LOGHCHKS &&
 	    (status != prev_status || report)) {
 		chunk_printf(&trash,
-		             "%s check for %sserver %s/%s %s%s",
+			     "%s check for %sserver %s/%s %s%s",
 			     (check->state & CHK_ST_AGENT) ? "Agent" : "Health",
-		             s->flags & SRV_F_BACKUP ? "backup " : "",
-		             s->proxy->id, s->id,
-		             (check->result == CHK_RES_CONDPASS) ? "conditionally ":"",
-		             (check->result >= CHK_RES_PASSED)   ? "succeeded" : "failed");
+			     s->flags & SRV_F_BACKUP ? "backup " : "",
+			     s->proxy->id, s->id,
+			     (check->result == CHK_RES_CONDPASS) ? "conditionally ":"",
+			     (check->result >= CHK_RES_PASSED)   ? "succeeded" : "failed");
 
 		srv_append_status(&trash, s, check, -1, 0);
 
 		chunk_appendf(&trash, ", status: %d/%d %s",
-		             (check->health >= check->rise) ? check->health - check->rise + 1 : check->health,
-		             (check->health >= check->rise) ? check->fall : check->rise,
+			     (check->health >= check->rise) ? check->health - check->rise + 1 : check->health,
+			     (check->health >= check->rise) ? check->fall : check->rise,
 			     (check->health >= check->rise) ? (s->uweight ? "UP" : "DRAIN") : "DOWN");
 
 		ha_warning("%s.\n", trash.str);
@@ -418,7 +418,7 @@ void __health_adjust(struct server *s, short status)
 		return;
 
 	chunk_printf(&trash, "Detected %d consecutive errors, last one was: %s",
-	             s->consecutive_errors, get_analyze_status(status));
+		     s->consecutive_errors, get_analyze_status(status));
 
 	switch (s->onerror) {
 		case HANA_ONERR_FASTINTER:
@@ -1192,8 +1192,8 @@ static void event_srv_chk_r(struct conn_stream *cs)
 			}
 		} else {
 			unsigned int first_packet_len = ((unsigned int) *check->bi->data) +
-			                                (((unsigned int) *(check->bi->data + 1)) << 8) +
-			                                (((unsigned int) *(check->bi->data + 2)) << 16);
+							(((unsigned int) *(check->bi->data + 1)) << 8) +
+							(((unsigned int) *(check->bi->data + 2)) << 16);
 
 			if (check->bi->i == first_packet_len + 4) {
 				/* MySQL Error packet always begin with field_count = 0xff */
@@ -1214,8 +1214,8 @@ static void event_srv_chk_r(struct conn_stream *cs)
 				}
 			} else if (check->bi->i > first_packet_len + 4) {
 				unsigned int second_packet_len = ((unsigned int) *(check->bi->data + first_packet_len + 4)) +
-				                                 (((unsigned int) *(check->bi->data + first_packet_len + 5)) << 8) +
-				                                 (((unsigned int) *(check->bi->data + first_packet_len + 6)) << 16);
+								 (((unsigned int) *(check->bi->data + first_packet_len + 5)) << 8) +
+								 (((unsigned int) *(check->bi->data + first_packet_len + 6)) << 16);
 
 				if (check->bi->i == first_packet_len + 4 + second_packet_len + 4 ) {
 					/* We have 2 packets and that's good */
@@ -1359,7 +1359,7 @@ static void event_srv_chk_r(struct conn_stream *cs)
 
  wait_more_data:
 	__cs_want_recv(cs);
-        goto out_unlock;
+	goto out_unlock;
 }
 
 /*
@@ -1613,6 +1613,8 @@ static int connect_conn_chk(struct task *t)
 
 	if (tcp_rule && tcp_rule->action == TCPCHK_ACT_EXPECT)
 		quickack = 0;
+
+	conn->is_health_check = t->is_health_check;
 
 	ret = SF_ERR_INTERNAL;
 	if (proto && proto->connect)
@@ -2178,9 +2180,6 @@ static struct task *process_chk_conn(struct task *t)
 		ret = connect_conn_chk(t);
 		cs = check->cs;
 		conn = cs_conn(cs);
-		if (conn != NULL) {
-			conn->xaaa_is_health_check = 1;
-		}
 		switch (ret) {
 		case SF_ERR_UP:
 			goto out_unlock;
@@ -2323,8 +2322,8 @@ static struct task *process_chk(struct task *t)
 
 	if (check->type == PR_O2_EXT_CHK)
 		return process_chk_proc(t);
+	t->is_health_check = 1;
 	return process_chk_conn(t);
-
 }
 
 static int start_check_task(struct check *check, int mininter,
@@ -3006,7 +3005,7 @@ static int tcpcheck_main(struct check *check)
 					/* we were looking for a string */
 					if (check->current_step->string != NULL) {
 						chunk_printf(&trash, "TCPCHK matched unwanted content '%s' at step %d",
-						             check->current_step->string, step);
+							     check->current_step->string, step);
 					}
 					else {
 					/* we were looking for a regex */
@@ -3060,7 +3059,7 @@ static int tcpcheck_main(struct check *check)
 					/* we were looking for a string */
 					if (check->current_step->string != NULL) {
 						chunk_printf(&trash, "TCPCHK did not match content '%s' at step %d",
-						             check->current_step->string, step);
+							     check->current_step->string, step);
 					}
 					else {
 					/* we were looking for a regex */

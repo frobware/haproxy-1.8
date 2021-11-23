@@ -371,8 +371,7 @@ struct conn_stream {
  * connection being instanciated. It must be removed once done.
  */
 struct connection {
-	int xaaa_is_health_check;	/* XAAA */
-
+	int is_health_check;
 	enum obj_type obj_type;       /* differentiates connection from applet context */
 	unsigned char err_code;       /* CO_ER_* */
 	signed short send_proxy_ofs;  /* <0 = offset to (re)send from the end, >0 = send all */

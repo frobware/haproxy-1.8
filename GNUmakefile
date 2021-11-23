@@ -3,10 +3,10 @@ CMAKE_BUILDER           = ninja
 CMAKE_BUILDER_ARGS      =
 BUILD_FILE              = build.ninja
 
-# CMAKE_GENERATOR		= "Unix Makefiles"
-# CMAKE_BUILDER           = make
-# CMAKE_BUILDER_ARGS      = -j -Oline --no-print-directory
-# BUILD_FILE              = Makefile
+CMAKE_GENERATOR		= "Unix Makefiles"
+CMAKE_BUILDER           = make
+CMAKE_BUILDER_ARGS      = -j -Oline --no-print-directory
+BUILD_FILE              = Makefile
 
 BUILD_DIR               := build
 

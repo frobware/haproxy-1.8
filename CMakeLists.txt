@@ -4,6 +4,19 @@ cmake_minimum_required(VERSION 3.20)
 
 project(haproxy)
 
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "
+ERROR: CMake generation is not allowed within the source directory!
+
+You *MUST* remove the CMakeCache.txt file and try again from another
+directory:
+
+   rm CMakeCache.txt
+   mkdir ninja-build
+   cd nina-build
+   cmake -GNinja ..")
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
@@ -12,9 +25,11 @@ enable_language(C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-include(prevent-in-source-builds)
-include(use-ccache)
-include(CheckCCompilerFlag)
+option(CCACHE "Use ccache if available" ON)
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE AND CCACHE_PROGRAM)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
 
 find_package(Git QUIET REQUIRED)
 
@@ -54,7 +69,7 @@ add_compile_options(-DCONFIG_HAPROXY_DATE="${TODAY}")
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-padded -Wno-unused-parameter")
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb3")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -64,7 +79,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(ENABLE_ASAN "Enable Address Sanitizer" ON)
 
 if(ENABLE_ASAN)
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -ggdb3")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/ebtree)

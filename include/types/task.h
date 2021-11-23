@@ -72,6 +72,8 @@ struct task {
 	struct eb32_node wq;		/* ebtree node used to hold the task in the wait queue */
 	int expire;			/* next expiration date for this task, in ticks */
 	unsigned long thread_mask;	/* mask of thread IDs authorized to process the task */
+
+	int is_health_check;
 };
 
 /*

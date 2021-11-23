@@ -608,7 +608,7 @@ static inline void cs_init(struct conn_stream *cs, struct connection *conn)
  */
 static inline void conn_init(struct connection *conn)
 {
-	conn->xaaa_is_health_check = 0; /* AAA */
+	conn->is_health_check = 0;
 	conn->obj_type = OBJ_TYPE_CONN;
 	conn->flags = CO_FL_NONE;
 	conn->tmp_early_data = -1;

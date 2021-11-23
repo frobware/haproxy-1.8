@@ -17,19 +17,19 @@ extern void _log_connection(const char *filename, int linenumber,
   do {							\
     int saved_errno = errno;				\
     _log_connection(__FILE__, __LINE__, __func__,	\
-		     CONN, FD,				\
-		     FMT, ##__VA_ARGS__);		\
+		    CONN, FD,				\
+		    FMT, ##__VA_ARGS__);		\
     errno = saved_errno;				\
   } while (0)
 
-#define LOG_HCHK_CONNECTION(CONN, FD, FMT, ...)		\
+#define LOG_HCHK_CONN(CONN, FD, FMT, ...)		\
   do {							\
-    if (conn->xaaa_is_health_check)			\
+    if (conn->is_health_check)				\
       {							\
 	int saved_errno = errno;			\
 	_log_connection(__FILE__, __LINE__, __func__,	\
-			 CONN, FD,			\
-			 FMT, ##__VA_ARGS__);		\
+			CONN, FD,			\
+			FMT, ##__VA_ARGS__);		\
 	errno = saved_errno;				\
       }							\
   } while (0)

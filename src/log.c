@@ -709,11 +709,11 @@ void ha_alert(const char *fmt, ...)
 {
 	va_list argp;
 
-	/* if (!(global.mode & MODE_QUIET) || (global.mode & (MODE_VERBOSE | MODE_STARTING))) { */
+	if (!(global.mode & MODE_QUIET) || (global.mode & (MODE_VERBOSE | MODE_STARTING))) {
 		va_start(argp, fmt);
 		print_message("ALERT", fmt, argp);
 		va_end(argp);
-	/* } */
+	}
 }
 
 
@@ -724,11 +724,11 @@ void ha_warning(const char *fmt, ...)
 {
 	va_list argp;
 
-	/* if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) { */
+	if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) {
 		va_start(argp, fmt);
 		print_message("WARNING", fmt, argp);
 		va_end(argp);
-	/* } */
+	}
 }
 
 /*
@@ -738,12 +738,12 @@ void qfprintf(FILE *out, const char *fmt, ...)
 {
 	va_list argp;
 
-	/* if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) { */
+	if (!(global.mode & MODE_QUIET) || (global.mode & MODE_VERBOSE)) {
 		va_start(argp, fmt);
 		vfprintf(out, fmt, argp);
 		fflush(out);
 		va_end(argp);
-	/* } */
+	}
 }
 
 /*
