@@ -45,6 +45,8 @@
 #include <proto/ssl_sock.h>
 #endif
 
+#include "log_health.h"
+
 struct log_fmt {
 	char *name;
 	struct {
@@ -1097,6 +1099,8 @@ void send_log(struct proxy *p, int level, const char *format, ...)
  */
 void __send_log(struct proxy *p, int level, char *message, size_t size, char *sd, size_t sd_size)
 {
+	int xaaa_stderr_logged = 0;
+
 	static THREAD_LOCAL struct iovec iovec[NB_MSG_IOVEC_ELEMENTS] = { };
 	static THREAD_LOCAL struct msghdr msghdr = {
 		//.msg_iov = iovec,
@@ -1318,6 +1322,15 @@ send:
 				ha_alert("sendmsg logger #%d failed: %s (errno=%d)\n",
 				         nblogger, strerror(errno), errno);
 			}
+		}
+
+		/* Forcibly output message to stderr. */
+		if (!xaaa_stderr_logged) {
+			if (stderr != NULL) {
+				char ts[TIMENOW_RFC8601_SIZE];
+				fprintf(stderr, "%s [pid %d] %s", _timenow_rfc8601(ts), getpid(), message);
+			}
+			xaaa_stderr_logged = 1;
 		}
 	}
 }

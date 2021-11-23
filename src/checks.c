@@ -1614,6 +1614,8 @@ static int connect_conn_chk(struct task *t)
 	if (tcp_rule && tcp_rule->action == TCPCHK_ACT_EXPECT)
 		quickack = 0;
 
+	conn->is_health_check = t->is_health_check;
+
 	ret = SF_ERR_INTERNAL;
 	if (proto && proto->connect)
 		ret = proto->connect(conn, check->type, quickack ? 2 : 0);
@@ -2321,8 +2323,8 @@ static struct task *process_chk(struct task *t)
 
 	if (check->type == PR_O2_EXT_CHK)
 		return process_chk_proc(t);
+	t->is_health_check = 1;
 	return process_chk_conn(t);
-
 }
 
 static int start_check_task(struct check *check, int mininter,

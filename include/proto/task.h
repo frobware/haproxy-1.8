@@ -213,6 +213,7 @@ static inline struct task *task_init(struct task *t, unsigned long thread_mask)
 	t->nice = 0;
 	t->calls = 0;
 	t->expire = TICK_ETERNITY;
+	t->is_health_check = 0;
 	return t;
 }
 
