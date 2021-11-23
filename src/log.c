@@ -45,6 +45,8 @@
 #include <proto/ssl_sock.h>
 #endif
 
+#include "health_check.h"
+
 struct log_fmt {
 	char *name;
 	struct {
@@ -1088,23 +1090,6 @@ void send_log(struct proxy *p, int level, const char *format, ...)
 	__send_log(p, level, logline, data_len, default_rfc5424_sd_log_format, 2);
 }
 
-static void current_time(char *s, size_t sz, const char *strftime_fmt, int *milliseconds)
-{
-	struct tm *tm_info;
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-	*milliseconds = tv.tv_usec / 1000.0;
-
-	if (*milliseconds >= 1000) {
-		*milliseconds -= 1000;
-		tv.tv_sec++;
-	}
-
-	tm_info = localtime(&tv.tv_sec);
-	strftime(s, sz, strftime_fmt, tm_info);
-}
-
 /*
  * This function sends a syslog message.
  * It doesn't care about errors nor does it report them.
@@ -1342,10 +1327,8 @@ void __send_log(struct proxy *p, int level, char *message, size_t size, char *sd
 		/* Forcibly output message to stderr. */
 		if (!xaaa_stderr_logged) {
 			if (stderr != NULL) {
-				char time_buffer[1024];
-				int milliseconds;
-				current_time(time_buffer, sizeof(time_buffer) - 1, "%Y-%m-%d %H:%M:%S", &milliseconds);
-				fprintf(stderr, "%s.%03d [pid %d] %s", time_buffer, milliseconds, getpid(), message);
+				char ts[32];
+				fprintf(stderr, "%s [pid %d] %s", _timenow_rfc8601(ts), getpid(), message);
 			}
 			xaaa_stderr_logged = 1;
 		}

@@ -315,32 +315,32 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 
 		if (errno == ENFILE) {
 			conn->err_code = CO_ER_SYS_FDLIM;
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			send_log(be, LOG_EMERG,
 				 "Proxy %s reached system FD limit at %d. Please check system tunables.\n",
 				 be->id, maxfd);
 		}
 		else if (errno == EMFILE) {
 			conn->err_code = CO_ER_PROC_FDLIM;
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			send_log(be, LOG_EMERG,
 				 "Proxy %s reached process FD limit at %d. Please check 'ulimit-n' and restart.\n",
 				 be->id, maxfd);
 		}
 		else if (errno == ENOBUFS || errno == ENOMEM) {
 			conn->err_code = CO_ER_SYS_MEMLIM;
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			send_log(be, LOG_EMERG,
 				 "Proxy %s reached system memory limit at %d sockets. Please check system tunables.\n",
 				 be->id, maxfd);
 		}
 		else if (errno == EAFNOSUPPORT || errno == EPROTONOSUPPORT) {
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			conn->err_code = CO_ER_NOPROTO;
 		}
 		else {
 			conn->err_code = CO_ER_SOCK_ERR;
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 		}
 
 		/* this is a resource error */
@@ -355,7 +355,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 		ha_alert("socket(): not enough free sockets. Raise -n argument. Giving up.\n");
 		close(fd);
 		conn->err_code = CO_ER_CONF_FDLIM;
-		LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+		LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 		conn->flags |= CO_FL_ERROR;
 		return SF_ERR_PRXCOND; /* it is a configuration limit */
 	}
@@ -366,7 +366,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 		close(fd);
 		conn->err_code = CO_ER_SOCK_ERR;
 		conn->flags |= CO_FL_ERROR;
-		LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+		LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 		return SF_ERR_INTERNAL;
 	}
 
@@ -430,7 +430,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 				fdinfo[fd].local_port = port_range_alloc_port(src->sport_range);
 				if (!fdinfo[fd].local_port) {
 					conn->err_code = CO_ER_PORT_RANGE;
-					LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+					LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 					break;
 				}
 
@@ -440,7 +440,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 				ret = tcp_bind_socket(fd, flags, &sa, &conn->addr.from);
 				if (ret != 0) {
 					conn->err_code = CO_ER_CANT_BIND;
-					LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+					LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 				}
 			} while (ret != 0); /* binding NOK */
 		}
@@ -452,7 +452,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 			ret = tcp_bind_socket(fd, flags, &src->source_addr, &conn->addr.from);
 			if (ret != 0) {
 				conn->err_code = CO_ER_CANT_BIND;
-				LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+				LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			}
 		}
 
@@ -500,7 +500,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
                 setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &global.tune.server_rcvbuf, sizeof(global.tune.server_rcvbuf));
 
 	if (connect(fd, (struct sockaddr *)&conn->addr.to, get_addr_len(&conn->addr.to)) == -1) {
-		LOG_CONNECTION(conn, fd, "connect errno = %d", errno); /* XXX this is going to be noisy */
+		LOG_CONNECTION(conn, fd, "connect errno %d", errno); /* XXX this is going to be noisy */
 		if (errno == EINPROGRESS || errno == EALREADY) {
 			/* common case, let's wait for connect status */
 			conn->flags |= CO_FL_WAIT_L4_CONN;
@@ -514,12 +514,12 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 			if (errno == EAGAIN || errno == EADDRNOTAVAIL) {
 				msg = "no free ports";
 				conn->err_code = CO_ER_FREE_PORTS;
-				LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+				LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			}
 			else {
 				msg = "local address already in use";
 				conn->err_code = CO_ER_ADDR_INUSE;
-				LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+				LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			}
 
 			qfprintf(stderr,"Connect() failed for backend %s: %s.\n", be->id, msg);
@@ -535,7 +535,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 			fdinfo[fd].port_range = NULL;
 			close(fd);
 			conn->err_code = CO_ER_SOCK_ERR;
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			conn->flags |= CO_FL_ERROR;
 			return SF_ERR_SRVTO;
 		} else {
@@ -545,7 +545,7 @@ int tcp_connect_server(struct connection *conn, int data, int delack)
 			fdinfo[fd].port_range = NULL;
 			close(fd);
 			conn->err_code = CO_ER_SOCK_ERR;
-			LOG_HCHK_CONNECTION(conn, fd, "connect error %s", conn_err_code_str(conn));
+			LOG_HCHK_CONNECTION(conn, fd, "error %s", conn_err_code_str(conn));
 			conn->flags |= CO_FL_ERROR;
 			return SF_ERR_SRVCL;
 		}
@@ -734,7 +734,7 @@ int tcp_connect_probe(struct connection *conn)
 	 *  - connected (EISCONN, 0)
 	 */
 	if (connect(fd, (struct sockaddr *)&conn->addr.to, get_addr_len(&conn->addr.to)) < 0) {
-		LOG_HCHK_CONNECTION(conn, fd, "connect error %d", errno);
+		LOG_HCHK_CONNECTION(conn, fd, "connect errno %d", errno);
 		if (errno == EALREADY || errno == EINPROGRESS) {
 			__conn_sock_stop_recv(conn);
 			fd_cant_send(fd);

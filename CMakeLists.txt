@@ -14,7 +14,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 include(prevent-in-source-builds)
 include(use-ccache)
-include(use-gold-linker)
 include(CheckCCompilerFlag)
 
 find_package(Git QUIET REQUIRED)
@@ -51,7 +50,7 @@ add_compile_options(-g -fno-strict-aliasing -Wdeclaration-after-statement -fwrap
 add_compile_options(-DENABLE_POLL -DENABLE_EPOLL -DUSE_POLL -DUSE_EPOLL -DUSE_OPENSSL -DUSE_PCRE -DUSE_ZLIB -DUSE_CRYPT_H -DUSE_LINUX_TPROXY -DUSE_GETADDRINFO -DUSE_THREADS)
 add_compile_options(-DCONFIG_HAPROXY_VERSION="${HAPROXY_GIT_VERSION} ${GIT_ORIGIN_URL}")
 add_compile_options(-DCONFIG_HAPROXY_DATE="${TODAY}")
-  
+
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-padded -Wno-unused-parameter")
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
