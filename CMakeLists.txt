@@ -3,32 +3,15 @@ cmake_minimum_required(VERSION 3.20)
 # Build setup configured for OpenShift 3.11.
 
 project(haproxy)
-
-if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-  message(FATAL_ERROR "
-ERROR: CMake generation is not allowed within the source directory!
-
-You *MUST* remove the CMakeCache.txt file and try again from another
-directory:
-
-   rm CMakeCache.txt
-   mkdir ninja-build
-   cd nina-build
-   cmake -GNinja ..")
-endif()
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif()
-
 enable_language(C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(prevent-in-source-builds)
+include(use-ccache)
+include(use-lld-linker)
 
-option(CCACHE "Use ccache if available" ON)
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE AND CCACHE_PROGRAM)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
 
 find_package(Git QUIET REQUIRED)

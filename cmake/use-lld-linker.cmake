@@ -1,0 +1,11 @@
+option(USE_LLD "Use lld linker" ON)
+
+if(USE_LLD AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+  execute_process(COMMAND ${CMAKE_C_COMPILER} -fuse-ld=lld -Wl,--version OUTPUT_VARIABLE stdout ERROR_QUIET)
+  if("${stdout}" MATCHES "lld")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld")
+  else()
+    message(WARNING "lld linker isn't available, using the default system linker.")
+  endif()
+endif()
