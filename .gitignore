@@ -1,7 +1,5 @@
 # Below we forbid everything and only allow what we know, that's much easier
 # than blocking about 500 different test files and bug report outputs.
-/.*
-/*
 !/.cirrus.yml
 !/.gitattributes
 !/.github
@@ -47,3 +45,8 @@ contrib/hpack/gen-rht
 contrib/tcploop/tcploop
 /src/dlmalloc.c
 /tests/test_hashes
+!CMakeLists.txt
+!/cmake
+!GNUmakefile
+/.idea
+*.patch
